@@ -6,8 +6,11 @@ from tornado.ioloop import IOLoop
 from gateway.conf import (
     CAMERA_NETWORK_IP,
     CAMERA_NETWORK_TCP_PORT,
+    MOBILE_NETWORK_IP,
+    MOBILE_NETWORK_TCP_PORT,
 )
 from gateway.camera.tcp import CameraTCPServer
+from gateway.mobile.tcp import MobileTCPServer
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +27,9 @@ def main():
 
     CameraTCPServer.instance().listen(
         CAMERA_NETWORK_TCP_PORT, address=CAMERA_NETWORK_IP)
+
+    MobileTCPServer.instance().listen(
+        MOBILE_NETWORK_TCP_PORT, address=MOBILE_NETWORK_IP)
 
     IOLoop.instance().start()
 
