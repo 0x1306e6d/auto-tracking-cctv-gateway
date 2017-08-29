@@ -1,3 +1,4 @@
+import base64
 import logging
 import struct
 import threading
@@ -27,6 +28,11 @@ class CameraTCPServer(TCPServer):
 
     def __init__(self):
         super(CameraTCPServer, self).__init__()
+        self.__camera_group = {}
+        self.__camera_id_generator = 0
+
+    def get_camera(self, camera_id):
+        return self.__camera_group[camera_id]
 
     def handle_setup(self, camera, body):
         body = struct.unpack('!IIH', body)
@@ -39,8 +45,14 @@ class CameraTCPServer(TCPServer):
         camera.framerate = framerate
         camera.send(net.Opcode.RECORD)
 
+        self.__camera_group[self.__camera_id_generator] = camera
+        self.__camera_id_generator += 1
+
     def handle_frame(self, camera, body):
-        frame = body
+        frame = base64.b64encode(body)
+        frame += b'\n'
+
+        camera.broadcast(frame)
 
     @gen.coroutine
     def handle_stream(self, stream, address):
