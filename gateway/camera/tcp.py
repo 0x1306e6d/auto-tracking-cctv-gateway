@@ -5,6 +5,8 @@ from tornado import gen
 from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 
+from gateway import net
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +32,19 @@ class CameraTCPServer(TCPServer):
 
         while True:
             try:
-                # TODO: handle camera's stream
-                pass
+                packet_size = struct.calcsize('!L')
+                packet_size = yield stream.read_bytes(packet_size)
+                packet_size = struct.unpack('!L', packet_size)[0]
+
+                packet = yield stream.read_bytes(packet_size)
+                opcode, body = net.decode_packet(packet)
+
+                if opcode == net.Opcode.SETUP:
+                    pass
+                else:
+                    logger.error('Invalid packet opcode: {}, body: {}'.
+                                 format(opcode, packet))
+
             except StreamClosedError:
                 logger.info('Camera stream is closed.')
                 break
