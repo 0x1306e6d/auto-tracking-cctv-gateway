@@ -4,6 +4,9 @@ import struct
 
 class Opcode(enum.Enum):
     SETUP = 0x01
+    RECORD = 0x10
+    PAUSE = 0x11
+    FRAME = 0x12
 
 
 def encode_packet(opcode, body=None):
