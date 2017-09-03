@@ -6,8 +6,6 @@ from tornado import gen
 from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 
-from gateway.camera.tcp import CameraTCPServer
-
 logger = logging.getLogger(__name__)
 
 
@@ -38,17 +36,11 @@ class MobileTCPServer(TCPServer):
                 packet = yield stream.read_bytes(packet_size)
                 packet = struct.unpack('!L', packet)[0]
 
-                camera_id = int(packet)
-                camera = CameraTCPServer.instance().get_camera(camera_id)
-                if camera:
-                    camera.subscribe(stream)
-                else:
-                    stream.close()
+                # TODO: Subscribe Camera
             except StreamClosedError:
                 logger.info('Mobile stream is closed.')
                 break
 
         if not camera_id == -1:
-            camera = CameraTCPServer.instance().get_camera(camera_id)
-            if camera:
-                camera.unsubscribe(stream)
+            # TODO: Unsubscribe Camera
+            pass
