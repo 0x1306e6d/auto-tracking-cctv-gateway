@@ -1,3 +1,4 @@
+import json
 import logging
 import struct
 
@@ -10,6 +11,7 @@ from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 from tornado.wsgi import WSGIContainer
 
+from gateway.app import gateway
 from gateway.conf import (
     MOBILE_NETWORK_IP,
     MOBILE_NETWORK_HTTP_PORT,
@@ -22,12 +24,37 @@ flask = Flask(__name__)
 
 @flask.route('/camera/<int:camera_id>', methods=['GET'])
 def handle_camera_request(camera_id):
-    return 'handle_camera_{}_request'.format(camera_id)
+    camera = gateway.camera_server.camera(camera_id)
+    if not camera:
+        return 'not exists camera'
+    else:
+        response = {
+            'id': id(camera),
+            'address': {
+                'ip': camera.address[0],
+                'port': camera.address[1]
+            },
+            'resolution': camera.resolution,
+            'framerate': camera.framerate
+        }
+        return json.dumps(response)
 
 
 @flask.route('/cameras', methods=['GET'])
 def handle_camera_list_request():
-    return 'handle_camera_list_request'
+    cameras = gateway.camera_server.cameras()
+    response = []
+    for camera in cameras:
+        response.append({
+            'id': id(camera),
+            'address': {
+                'ip': camera.address[0],
+                'port': camera.address[1]
+            },
+            'resolution': camera.resolution,
+            'framerate': camera.framerate
+        })
+    return json.dumps(response)
 
 
 class MobileTCPServer(TCPServer):

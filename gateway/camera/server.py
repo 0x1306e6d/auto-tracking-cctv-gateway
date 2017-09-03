@@ -26,6 +26,7 @@ def handle_setup(server, camera, packet):
     camera.resolution = resolution
     camera.framerate = framerate
     camera.send(net.Opcode.RECORD)
+    server.add_camera(camera)
 
 
 def handle_frame(server, camera, packet):
@@ -56,8 +57,8 @@ class CameraTCPServer(TCPServer):
                 packet = yield stream.read_bytes(packet_size)
                 opcode, body = net.decode_packet(packet)
 
-                logger.debug('Decoded packet opcode: {}, len(body): {}'.
-                             format(opcode, len(body)))
+                logger.debug('[{}] Decoded packet opcode: {}, len(body): {}'.
+                             format(id(camera), opcode, len(body)))
 
                 handler = self.__handlers.get(opcode)
                 if handler:
@@ -70,11 +71,28 @@ class CameraTCPServer(TCPServer):
                 break
 
         logger.info('Camera stream is closed.')
+        self.__parent.remove_camera(camera)
 
 
 class CameraServer(object):
     def __init__(self):
+        self.__cameras = {}
         self.__tcp_server = CameraTCPServer(self)
+
+    def add_camera(self, camera):
+        self.__cameras[id(camera)] = camera
+
+    def remove_camera(self, camera):
+        if self.__cameras.get(id(camera)) is not None:
+            del self.__cameras[id(camera)]
+
+    def cameras(self):
+        return self.__cameras.values()
+
+    def camera(self, camera_id):
+        return self.__cameras.get(camera_id)
 
     def listen(self, port=CAMERA_NETWORK_TCP_PORT, address=CAMERA_NETWORK_IP):
         self.__tcp_server.listen(port, address=address)
+        logger.info('Listening camera tcp server on {}:{}'.
+                    format(address, port))

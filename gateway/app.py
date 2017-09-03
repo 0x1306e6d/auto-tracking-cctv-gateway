@@ -10,8 +10,6 @@ from gateway.conf import (
     MOBILE_NETWORK_HTTP_PORT,
     MOBILE_NETWORK_TCP_PORT,
 )
-from gateway.camera.server import CameraServer
-from gateway.mobile.server import MobileServer
 
 logger = logging.getLogger(__name__)
 gateway = None
@@ -39,11 +37,15 @@ class Gateway(object):
         IOLoop.instance().start()
 
     def __init_camera_server(self):
+        from gateway.camera.server import CameraServer
+
         self.camera_server = CameraServer()
         self.camera_server.listen()
         logger.info('Camera server is initialized.')
 
     def __init_mobile_server(self):
+        from gateway.mobile.server import MobileServer
+
         self.mobile_server = MobileServer()
         self.mobile_server.listen()
         logger.info('Mobile server is initialized.')
