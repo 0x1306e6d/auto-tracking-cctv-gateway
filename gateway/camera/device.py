@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 class CameraDevice(object):
     def __init__(self, stream, address):
+        self.__stream = stream
+        self.address = address
         self.resolution = None
         self.framerate = None
-        self.__stream = stream
-        self.__address = address
 
     @gen.coroutine
     def send(self, opcode, body=None):
