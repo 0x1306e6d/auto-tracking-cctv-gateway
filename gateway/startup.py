@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 
-from gateway.app import Gateway
+from gateway.app import start
 
 
 def configure_logging():
@@ -22,4 +22,4 @@ def parse_args():
 
 def start_from_command_line():
     configure_logging()
-    Gateway(parse_args()).start()
+    start(parse_args())
