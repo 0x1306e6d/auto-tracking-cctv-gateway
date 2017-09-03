@@ -10,7 +10,7 @@ from gateway.conf import (
     MOBILE_NETWORK_HTTP_PORT,
     MOBILE_NETWORK_TCP_PORT,
 )
-from gateway.camera.tcp import CameraTCPServer
+from gateway.camera.server import CameraServer
 from gateway.mobile.http import get_application
 from gateway.mobile.tcp import MobileTCPServer
 
@@ -20,14 +20,13 @@ logger = logging.getLogger(__name__)
 class Gateway(object):
     def __init__(self, args):
         self.__args = args
+        self.camera_server = None
 
     def start(self):
         logging.info('Starting auto tracking cctv gateway')
         logging.debug('args = {}'.format(self.__args))
 
-        CameraTCPServer.instance().listen(
-            CAMERA_NETWORK_TCP_PORT, address=CAMERA_NETWORK_IP)
-        logger.info('Camera TCP server is started.')
+        self.__init_camera_server()
 
         HTTPServer(get_application()).listen(
             MOBILE_NETWORK_HTTP_PORT, address=MOBILE_NETWORK_IP)
@@ -38,3 +37,8 @@ class Gateway(object):
         logger.info('Mobile TCP server is started.')
 
         IOLoop.instance().start()
+
+    def __init_camera_server(self):
+        self.camera_server = CameraServer()
+        self.camera_server.listen()
+        logger.info('Camera server is initialized.')
