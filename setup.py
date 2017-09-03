@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'run-cctv-gateway = gateway.__main__:main'
+            'run-cctv-gateway = gateway.startup:start_from_command_line'
         ]
     }
 )
