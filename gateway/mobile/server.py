@@ -66,25 +66,25 @@ class MobileTCPServer(TCPServer):
     def handle_stream(self, stream, address):
         logger.info('New mobile stream {} from {}'.format(stream, address))
 
-        while True:
-            try:
-                packet_size = struct.calcsize('!L')
-                packet = yield stream.read_bytes(packet_size)
-                packet = struct.unpack('!L', packet)[0]
+        camera_id = None
 
-                camera_id = int(packet)
-                camera = gateway.camera_server.camera(camera_id)
-                if camera is not None:
-                    camera.subscribe(stream)
-            except StreamClosedError:
-                break
+        def on_close(data):
+            logger.info('Close mobile stream {}'.format(stream))
 
-        logger.info('Mobile stream {} is closed.'.format(stream))
-
-        if camera_id:
             camera = gateway.camera_server.camera(camera_id)
             if camera is not None:
                 camera.unsubscribe(stream)
+
+        def on_data(data):
+            logger.info('Read camera id from mobile stream {}'.format(stream))
+
+            camera_id = int(struct.unpack('!L', data)[0])
+            camera = gateway.camera_server.camera(camera_id)
+            if camera is not None:
+                camera.subscribe(stream)
+                stream.read_until_close(on_close)
+
+        stream.read_bytes(struct.calcsize('!L'), on_data)
 
 
 class MobileServer(object):
