@@ -49,6 +49,7 @@ def handle_frame(server, camera, packet):
     cv2.waitKey(1)
     frame = base64.b64encode(packet)
     frame += b'\n'
+    camera.boradcast_to_watchers(frame)
 
 
 class CameraTCPServer(TCPServer):
@@ -104,7 +105,8 @@ class CameraServer(object):
             del self.__cameras[id(camera)]
 
     def cameras(self):
-        return self.__cameras.values()
+        for k in self.__cameras.keys():
+            yield self.__cameras.get(k)
 
     def camera(self, camera_id):
         return self.__cameras.get(camera_id)
