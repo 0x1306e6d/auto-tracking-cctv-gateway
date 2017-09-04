@@ -32,6 +32,7 @@ def handle_setup(server, camera, packet):
 def handle_frame(server, camera, packet):
     frame = base64.b64encode(packet)
     frame += b'\n'
+    camera.broadcast_to_watchers(frame)
 
 
 class CameraTCPServer(TCPServer):
