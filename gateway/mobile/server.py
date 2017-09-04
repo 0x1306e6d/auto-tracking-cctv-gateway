@@ -26,35 +26,18 @@ flask = Flask(__name__)
 def handle_camera_request(camera_id):
     camera = gateway.camera_server.camera(camera_id)
     if not camera:
-        return 'not exists camera'
+        return 'camera {} is not exist.'.format(camera_id)
     else:
-        response = {
-            'id': id(camera),
-            'address': {
-                'ip': camera.address[0],
-                'port': camera.address[1]
-            },
-            'resolution': camera.resolution,
-            'framerate': camera.framerate
-        }
-        return json.dumps(response)
+        return json.dumps(camera.to_dict())
 
 
 @flask.route('/cameras', methods=['GET'])
 def handle_camera_list_request():
     cameras = gateway.camera_server.cameras()
-    response = []
-    for camera in cameras:
-        response.append({
-            'id': id(camera),
-            'address': {
-                'ip': camera.address[0],
-                'port': camera.address[1]
-            },
-            'resolution': camera.resolution,
-            'framerate': camera.framerate
-        })
-    return json.dumps(response)
+    if not cameras:
+        return 'cameras are not exist.'
+    else:
+        return json.dumps([camera.to_dict() for camera in cameras])
 
 
 class MobileTCPServer(TCPServer):

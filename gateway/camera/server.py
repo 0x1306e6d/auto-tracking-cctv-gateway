@@ -88,7 +88,8 @@ class CameraServer(object):
             del self.__cameras[id(camera)]
 
     def cameras(self):
-        return self.__cameras.values()
+        for k in self.__cameras.keys():
+            yield self.__cameras.get(k)
 
     def camera(self, camera_id):
         return self.__cameras.get(camera_id)
