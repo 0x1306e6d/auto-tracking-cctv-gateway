@@ -72,10 +72,19 @@ class MobileTCPServer(TCPServer):
                 packet = yield stream.read_bytes(packet_size)
                 packet = struct.unpack('!L', packet)[0]
 
+                camera_id = int(packet)
+                camera = gateway.camera_server.camera(camera_id)
+                if camera is not None:
+                    camera.subscribe(stream)
             except StreamClosedError:
                 break
 
         logger.info('Mobile stream {} is closed.'.format(stream))
+
+        if camera_id:
+            camera = gateway.camera_server.camera(camera_id)
+            if camera is not None:
+                camera.unsubscribe(stream)
 
 
 class MobileServer(object):
