@@ -2,6 +2,12 @@ import base64
 import logging
 import struct
 
+import cv2
+import numpy as np
+
+from scipy import *
+from scipy.cluster import vq
+
 from tornado import gen
 from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
@@ -12,6 +18,7 @@ from gateway.conf import (
     CAMERA_NETWORK_TCP_PORT,
 )
 from gateway.camera.device import CameraDevice
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +37,18 @@ def handle_setup(server, camera, packet):
 
 
 def handle_frame(server, camera, packet):
+    image = np.frombuffer(packet, np.uint8)
+    image = cv2.imdecode(image, 1)
+    camera.match_face(image)
+    display_image, center_point = camera.getCenterpoint(image)
+    #print(center_point)
+    if center_point and center_point != 1:
+        print(center_point)
+    display_image = camera.display_face_recognition(display_image)
+    cv2.imshow("display", display_image)
+    cv2.waitKey(1)
     frame = base64.b64encode(packet)
     frame += b'\n'
-    camera.broadcast_to_watchers(frame)
 
 
 class CameraTCPServer(TCPServer):
@@ -88,8 +104,7 @@ class CameraServer(object):
             del self.__cameras[id(camera)]
 
     def cameras(self):
-        for k in self.__cameras.keys():
-            yield self.__cameras.get(k)
+        return self.__cameras.values()
 
     def camera(self, camera_id):
         return self.__cameras.get(camera_id)
