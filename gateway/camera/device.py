@@ -15,6 +15,20 @@ class CameraDevice(object):
         self.framerate = None
         self.__watchers = {}
 
+    def to_dict(self):
+        return {
+            'id': id(self),
+            'address': {
+                'ip': self.address[0],
+                'port': self.address[1]
+            },
+            'resolution': {
+                'width': self.resolution[0],
+                'height': self.resolution[1]
+            },
+            'framerate': self.framerate
+        }
+
     @gen.coroutine
     def send(self, opcode, body=None):
         packet = net.encode_packet(opcode, body)
