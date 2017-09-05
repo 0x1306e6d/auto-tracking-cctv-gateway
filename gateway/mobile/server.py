@@ -61,13 +61,13 @@ class MobileTCPServer(TCPServer):
         def on_data(data):
             logger.info('Read camera id from mobile stream {}'.format(stream))
 
-            camera_id = int(struct.unpack('!L', data)[0])
+            camera_id = int(struct.unpack('!Q', data)[0])
             camera = gateway.camera_server.camera(camera_id)
             if camera is not None:
                 camera.subscribe(stream)
                 stream.read_until_close(on_close)
 
-        stream.read_bytes(struct.calcsize('!L'), on_data)
+        stream.read_bytes(struct.calcsize('!Q'), on_data)
 
 
 class MobileServer(object):
