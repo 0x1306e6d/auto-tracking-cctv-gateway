@@ -16,11 +16,12 @@ def recognize_face(frame, faces, tolerance=0.50):
         else:
             names.append('Unknown')
 
-    __display_face_recognization(frame, locations, names)
+    __display_recognized_faces(frame, locations, names)
 
     return names
 
-def __display_face_recognization(frame, locations, names):
+
+def __display_recognized_faces(frame, locations, names):
     for (top, right, bottom, left), name in zip(locations, names):
         top *= 4
         right *= 4
@@ -29,6 +30,8 @@ def __display_face_recognization(frame, locations, names):
 
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
         font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-    cv2.imshow('face_recognition', frame)
+        cv2.putText(frame, name, (left + 6, bottom - 6),
+                    font, 1.0, (255, 255, 255), 1)
+
+    cv2.imshow('display', frame)
     cv2.waitKey(1)
