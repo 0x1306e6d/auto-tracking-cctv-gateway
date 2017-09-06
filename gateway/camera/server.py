@@ -1,12 +1,9 @@
 import base64
 import logging
+import multiprocessing
 import struct
 
-import cv2
-import numpy as np
-
-from scipy import *
-from scipy.cluster import vq
+from concurrent.futures import ProcessPoolExecutor
 
 from tornado import gen
 from tornado.iostream import StreamClosedError
@@ -33,23 +30,17 @@ def handle_setup(server, camera, packet):
     camera.resolution = resolution
     camera.framerate = framerate
     camera.send(net.Opcode.RECORD)
+
     server.add_camera(camera)
 
 
 def handle_frame(server, camera, packet):
-    image = np.frombuffer(packet, np.uint8)
-    image = cv2.imdecode(image, 1)
-    camera.match_face(image)
-    display_image, center_point = camera.getCenterpoint(image)
-    #print(center_point)
-    if center_point and center_point != 1:
-        print(center_point)
-    display_image = camera.display_face_recognition(display_image)
-    cv2.imshow("display", display_image)
-    cv2.waitKey(1)
-    frame = base64.b64encode(packet)
-    frame += b'\n'
-    camera.boradcast_to_watchers(frame)
+    frame = packet
+    camera.try_image_processing(frame)
+
+    encoded_frame = base64.b64encode(packet)
+    encoded_frame += b'\n'
+    camera.broadcast_to_watchers(encoded_frame)
 
 
 class CameraTCPServer(TCPServer):
@@ -64,7 +55,7 @@ class CameraTCPServer(TCPServer):
     def handle_stream(self, stream, address):
         logger.info('New camera stream from {}'.format(address))
 
-        camera = CameraDevice(stream, address)
+        camera = CameraDevice(stream, address, self.__parent.executor)
 
         while True:
             try:
@@ -75,8 +66,7 @@ class CameraTCPServer(TCPServer):
                 packet = yield stream.read_bytes(packet_size)
                 opcode, body = net.decode_packet(packet)
 
-                logger.debug('[{}] Decoded packet opcode: {}, len(body): {}'.
-                             format(id(camera), opcode, len(body)))
+                # logger.debug('[PACKET] opcode: {}, body: {}'.format(opcode, len(body)))
 
                 handler = self.__handlers.get(opcode)
                 if handler:
@@ -94,6 +84,7 @@ class CameraTCPServer(TCPServer):
 
 class CameraServer(object):
     def __init__(self):
+        self.executor = ProcessPoolExecutor(multiprocessing.cpu_count())
         self.__cameras = {}
         self.__tcp_server = CameraTCPServer(self)
 
