@@ -2,6 +2,7 @@ import cv2
 import face_recognition as fr
 import logging
 import numpy as np
+import struct
 
 from tornado import gen
 
@@ -11,6 +12,11 @@ from gateway.camera.tracker import track_object
 
 logger = logging.getLogger(__name__)
 
+MOVE_TOP = 0x01
+MOVE_BOTTOM = 0x02
+MOVE_LEFT = 0x04
+MOVE_RIGHT = 0x08
+
 
 class CameraDevice(object):
     def __init__(self, stream, address, executor):
@@ -18,6 +24,7 @@ class CameraDevice(object):
         self.address = address
         self.resolution = None
         self.framerate = None
+        self.moving = False
         self.__watchers = {}
         self.__executor = executor
         self.__object_tracking_future = None
@@ -68,6 +75,13 @@ class CameraDevice(object):
     def unsubscribe(self, stream):
         if id(stream) in self.__watchers:
             del self.__watchers[id(stream)]
+
+    def move(self, direction):
+        if not self.moving:
+            self.moving = True
+
+            body = struct.pack('!H', direction)
+            self.send(net.Opcode.MOVE_REQUEST, body)
 
     def try_image_processing(self, frame):
         self.__fetch_object_tracking_result()
