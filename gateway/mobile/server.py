@@ -41,11 +41,20 @@ def handle_camera_list_request():
         return json.dumps([camera.to_dict() for camera in cameras])
 
 
-@flask.route('/token/<token>', methods=['POST'])
-def handle_update_token(token):
-    logging.debug('Received token: %s', token)
+@flask.route('/token', methods=['POST'])
+def handle_update_token():
+    body = request.data.decode('utf-8')
+    body = json.loads(body)
 
-    fcm.insert_token(token)
+    if 'token' in body:
+        token = body['token']
+        logging.debug('Received firebase token: %s', token)
+
+        fcm.insert_token(token)
+
+        return json.dumps({
+            'success': True
+        })
 
 
 class MobileTCPServer(TCPServer):

@@ -5,10 +5,9 @@ setup(
     version='1.0',
     packages=find_packages(),
     install_requires=[
-        tornado,
-        flask,
-        sqlite3,
-        pyfcm,
+        'tornado',
+        'flask',
+        'pyfcm',
     ],
     entry_points={
         'console_scripts': [

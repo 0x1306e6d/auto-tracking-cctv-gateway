@@ -25,12 +25,14 @@ def notify_all(message_title=None, message_body=None):
     con.row_factory = lambda cursor, row: row[0]
 
     cur = con.cursor()
+    cur.execute('CREATE TABLE IF NOT EXISTS tokens(token TEXT)')
     cur.execute('SELECT * FROM tokens')
 
     registration_ids = [row for row in cur.fetchall()]
-    # noti = FCMNotification(API-KEY must be here)
-    result = noti.notify_multiple_devices(registration_ids=registration_ids,
-                                          message_title=message_title,
-                                          message_body=message_body)
+    if len(registration_ids) > 0:
+        noti = FCMNotification('API-KEY')
+        result = noti.notify_multiple_devices(registration_ids=registration_ids,
+                                              message_title=message_title,
+                                              message_body=message_body)
 
-    return result
+        return result
