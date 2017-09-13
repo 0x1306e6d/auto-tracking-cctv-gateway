@@ -1,6 +1,6 @@
 # Project Ignore Files
 /images
-/gateway/camera/images
+*.db
 
 
 # Python.gitignore

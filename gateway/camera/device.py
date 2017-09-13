@@ -2,6 +2,7 @@ import cv2
 import face_recognition as fr
 import logging
 import numpy as np
+import time
 
 from tornado import gen
 
@@ -35,6 +36,7 @@ class CameraDevice(object):
         # For face recognization
         self.__faces_to_recognize = fr.face_encodings(
             fr.load_image_file("./images/So-eun/01.jpg"))[0]
+        self.__last_notify_time = None
 
     def to_dict(self):
         return {
@@ -126,8 +128,16 @@ class CameraDevice(object):
 
                 if names and len(names) > 0:
                     logger.debug('Face recognization result: {}'.format(names))
-                    fcm.notify_all(message_title='Face Recognized.',
-                                   message_body='Intruder %s are in cctv' % names)
+
+                    now = time.time()
+                    if self.__last_notify_time is None or \
+                            (now - self.__last_notify_time) > 60:
+                        notify_result = fcm.notify_all(message_title='Face Recognization Message',
+                                                       message_body='Faces %s are recognized' % names)
+                        if notify_result:
+                            logging.debug('Notify result: %s', notify_result)
+
+                        self.__last_notify_time = now
 
                 self.__face_recognition_future = None
 
