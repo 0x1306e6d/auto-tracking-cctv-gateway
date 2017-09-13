@@ -2,7 +2,7 @@ import json
 import logging
 import struct
 
-from flask import Flask
+from flask import Flask, request
 
 from tornado import gen
 from tornado.httpserver import HTTPServer
@@ -17,6 +17,7 @@ from gateway.conf import (
     MOBILE_NETWORK_HTTP_PORT,
     MOBILE_NETWORK_TCP_PORT,
 )
+from gateway.firebase import fcm
 
 logger = logging.getLogger(__name__)
 flask = Flask(__name__)
@@ -38,6 +39,13 @@ def handle_camera_list_request():
         return 'cameras are not exist.'
     else:
         return json.dumps([camera.to_dict() for camera in cameras])
+
+
+@flask.route('/token/<token>', methods=['POST'])
+def handle_update_token(token):
+    logging.debug('Received token: %s', token)
+
+    fcm.insert_token(token)
 
 
 class MobileTCPServer(TCPServer):
