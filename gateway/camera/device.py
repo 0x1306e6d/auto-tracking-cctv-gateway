@@ -8,6 +8,7 @@ from tornado import gen
 from gateway import net
 from gateway.camera.recognizor import recognize_face
 from gateway.camera.tracker import track_object
+from gateway.firebase import fcm
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,8 @@ class CameraDevice(object):
 
                 if names and len(names) > 0:
                     logger.debug('Face recognization result: {}'.format(names))
+                    fcm.notify_all(message_title='Face Recognized.',
+                                   message_body='Intruder %s are in cctv' % names)
 
                 self.__face_recognition_future = None
 
