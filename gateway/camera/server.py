@@ -17,15 +17,12 @@ from gateway.conf import (
 from gateway.camera.device import CameraDevice
 
 
-logger = logging.getLogger(__name__)
-
-
 def handle_setup(server, camera, packet):
     packet = struct.unpack('!IIH', packet)
     resolution = (packet[0], packet[1])
     framerate = packet[2]
-    logger.info('Setup camera device. resolution: {}, framerate: {}'.
-                format(resolution, framerate))
+    logging.info('Setup camera device. resolution: {}, framerate: {}'.
+                 format(resolution, framerate))
 
     camera.resolution = resolution
     camera.framerate = framerate
@@ -53,7 +50,7 @@ class CameraTCPServer(TCPServer):
 
     @gen.coroutine
     def handle_stream(self, stream, address):
-        logger.info('New camera stream from {}'.format(address))
+        logging.info('New camera stream from {}'.format(address))
 
         camera = CameraDevice(stream, address, self.__parent.executor)
 
@@ -66,19 +63,19 @@ class CameraTCPServer(TCPServer):
                 packet = yield stream.read_bytes(packet_size)
                 opcode, body = net.decode_packet(packet)
 
-                # logger.debug('[PACKET] opcode: {}, body: {}'.format(opcode, len(body)))
+                # logging.debug('[PACKET] opcode: {}, body: {}'.format(opcode, len(body)))
 
                 handler = self.__handlers.get(opcode)
                 if handler:
                     handler(self.__parent, camera, body)
                 else:
-                    logger.error('Invalid packet opcode: {}, body: {}'.
-                                 format(opcode, packet))
+                    logging.error('Invalid packet opcode: {}, body: {}'.
+                                  format(opcode, packet))
                     break
             except StreamClosedError:
                 break
 
-        logger.info('Camera stream is closed.')
+        logging.info('Camera stream is closed.')
         self.__parent.remove_camera(camera)
 
 
@@ -104,5 +101,5 @@ class CameraServer(object):
 
     def listen(self, port=CAMERA_NETWORK_TCP_PORT, address=CAMERA_NETWORK_IP):
         self.__tcp_server.listen(port, address=address)
-        logger.info('Listening camera tcp server on {}:{}'.
-                    format(address, port))
+        logging.info('Listening camera tcp server on {}:{}'.
+                     format(address, port))
