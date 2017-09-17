@@ -1,1 +1,3 @@
 LOGGING_FILE_NAME = 'logging.cfg'
+
+DISPLAY_RECOGNIZED_FACES = True
