@@ -9,8 +9,6 @@ from gateway import net
 from gateway.camera.recognizor import recognize_face
 from gateway.camera.tracker import track_object
 
-logger = logging.getLogger(__name__)
-
 
 class CameraDevice(object):
     def __init__(self, stream, address, executor):
@@ -104,7 +102,7 @@ class CameraDevice(object):
                 self.__last_frame_entity_list = last_frame_entity_list
 
                 if point is not None:
-                    logger.debug('Object tracking result: {}'.format(point))
+                    logging.debug('Object tracking result: {}'.format(point))
 
                 self.__object_tracking_future = None
 
@@ -124,7 +122,7 @@ class CameraDevice(object):
                 names = self.__face_recognition_future.result()
 
                 if names and len(names) > 0:
-                    logger.debug('Face recognization result: {}'.format(names))
+                    logging.debug('Face recognization result: {}'.format(names))
 
                 self.__face_recognition_future = None
 

@@ -11,7 +11,6 @@ from gateway.conf import (
     MOBILE_NETWORK_TCP_PORT,
 )
 
-logger = logging.getLogger(__name__)
 gateway = None
 
 
@@ -41,11 +40,11 @@ class Gateway(object):
 
         self.camera_server = CameraServer()
         self.camera_server.listen()
-        logger.info('Camera server is initialized.')
+        logging.info('Camera server is initialized.')
 
     def __init_mobile_server(self):
         from gateway.mobile.server import MobileServer
 
         self.mobile_server = MobileServer()
         self.mobile_server.listen()
-        logger.info('Mobile server is initialized.')
+        logging.info('Mobile server is initialized.')
