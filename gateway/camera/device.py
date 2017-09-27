@@ -39,6 +39,8 @@ class CameraDevice(object):
         self.__last_target_change_time = None
         self.__last_frame_entity_list = None
 
+        self._last_notified_faces = {}
+
     def to_dict(self):
         return {
             'id': id(self),
@@ -82,7 +84,7 @@ class CameraDevice(object):
 
     def try_image_processing(self, frame):
         self.__fetch_object_tracking_result()
-        self.__fetch_face_recognization_result()
+        self._fetch_face_recognition_result()
 
         is_object_trackable = self.__object_tracking_future is None
         is_face_recognizable = self.__face_recognition_future is None
@@ -94,7 +96,7 @@ class CameraDevice(object):
                 self.__execute_object_tracking(frame)
 
             if is_face_recognizable:
-                self.__execute_face_recognization(frame)
+                self._execute_face_recognition(frame)
 
     def __fetch_object_tracking_result(self):
         if self.__object_tracking_future:
@@ -129,26 +131,43 @@ class CameraDevice(object):
                                                                self.__last_target_change_time,
                                                                self.__last_frame_entity_list)
 
-    def __fetch_face_recognization_result(self):
+    def _handle_face_recognition_result(self, faces):
+        now = time.time()
+        to_notify_names = []
+
+        for name, distance in faces:
+            if name in self._last_notified_faces:
+                if (now - self._last_notified_faces[name]) > 60:
+                    to_notify_names.append(name)
+            else:
+                to_notify_names.append(name)
+
+        if len(to_notify_names) > 0:
+            if 'Uhknown' in to_notify_names:
+                message_title = "Warning"
+                message_body = "Unknown people are detected"
+            else:
+                message_title = "People are detected"
+                message_body = to_notify_names
+            result = fcm.notify_all(message_title, message_body)
+            if result:
+                logging.debug('Notify result: {}'.format(result))
+
+            for name in filter(lambda x: x is not 'Unknown', to_notify_names):
+                if name in self._last_notified_faces:
+                    del self._last_notified_faces[name]
+                self._last_notified_faces[name] = now
+
+    def _fetch_face_recognition_result(self):
         if self.__face_recognition_future:
             if self.__face_recognition_future.done():
                 faces = self.__face_recognition_future.result()
-
                 if len(faces) > 0:
                     logging.debug('Face recognition result: %s', faces)
-
-                    now = time.time()
-                    if self.__last_notify_time is None or \
-                            (now - self.__last_notify_time) > 60:
-                        notify_result = fcm.notify_all(message_title='Face Recognization Message',
-                                                       message_body='Faces %s are recognized' % names)
-                        if notify_result:
-                            logging.debug('Notify result: %s', notify_result)
-
-                        self.__last_notify_time = now
+                    self._handle_face_recognition_result(faces)
 
                 self.__face_recognition_future = None
 
-    def __execute_face_recognization(self, frame):
+    def _execute_face_recognition(self, frame):
         self.__face_recognition_future = self.__executor.submit(
             face.recognize_face, frame, gateway.faces)
