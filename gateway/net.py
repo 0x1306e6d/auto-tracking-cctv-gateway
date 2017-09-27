@@ -7,6 +7,8 @@ class Opcode(enum.Enum):
     RECORD = 0x10
     PAUSE = 0x11
     FRAME = 0x12
+    MOVE_REQUEST = 0x20
+    MOVE_RESPONSE = 0x21
 
 
 def encode_packet(opcode, body=None):
