@@ -22,22 +22,49 @@ from gateway.firebase import fcm
 flask = Flask(__name__)
 
 
+@flask.route('/cameras', methods=['GET'])
+def handle_camera_list_request():
+    cameras = gateway.camera_server.cameras()
+
+    if not cameras:
+        return json.dumps({
+            'success': False,
+            'reason': 'cameras are not initialized.'
+        })
+    else:
+        return json.dumps([camera.to_dict() for camera in cameras])
+
+
 @flask.route('/camera/<int:camera_id>', methods=['GET'])
 def handle_camera_request(camera_id):
     camera = gateway.camera_server.camera(camera_id)
+
     if not camera:
-        return 'camera {} is not exist.'.format(camera_id)
+        return json.dumps({
+            'success': False,
+            'reason': 'camera {} is not exist.'.format(camera_id)
+        })
     else:
         return json.dumps(camera.to_dict())
 
 
-@flask.route('/cameras', methods=['GET'])
-def handle_camera_list_request():
-    cameras = gateway.camera_server.cameras()
-    if not cameras:
-        return 'cameras are not exist.'
+@flask.route('/camera/<int:camera_id>/move', methods=['POST'])
+def handle_camera_move_request(camera_id):
+    body = request.data.decode('utf-8')
+    body = json.loads(body)
+    direction = body['direction']
+
+    camera = gateway.camera_server.camera(camera_id)
+    if not camera:
+        return json.dumps({
+            'success': False,
+            'reason': 'camera {} is not exist.'.format(camera_id)
+        })
     else:
-        return json.dumps([camera.to_dict() for camera in cameras])
+        camera.move(direction)
+        return json.dumps({
+            'success': True
+        })
 
 
 @flask.route('/token', methods=['POST'])

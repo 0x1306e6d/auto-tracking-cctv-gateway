@@ -40,6 +40,10 @@ def handle_frame(server, camera, packet):
     camera.broadcast_to_watchers(encoded_frame)
 
 
+def handle_move_response(server, camera, packet):
+    camera.moving = False
+
+
 class CameraTCPServer(TCPServer):
     def __init__(self, parent):
         super(CameraTCPServer, self).__init__()
@@ -47,6 +51,7 @@ class CameraTCPServer(TCPServer):
         self.__handlers = {}
         self.__handlers[net.Opcode.SETUP] = handle_setup
         self.__handlers[net.Opcode.FRAME] = handle_frame
+        self.__handlers[net.Opcode.MOVE_RESPONSE] = handle_move_response
 
     @gen.coroutine
     def handle_stream(self, stream, address):
