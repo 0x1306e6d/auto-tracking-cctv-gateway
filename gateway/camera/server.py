@@ -68,8 +68,6 @@ class CameraTCPServer(TCPServer):
                 packet = yield stream.read_bytes(packet_size)
                 opcode, body = net.decode_packet(packet)
 
-                # logging.debug('[PACKET] opcode: {}, body: {}'.format(opcode, len(body)))
-
                 handler = self.__handlers.get(opcode)
                 if handler:
                     handler(self.__parent, camera, body)
