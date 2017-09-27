@@ -2,6 +2,7 @@ import cv2
 import face_recognition as fr
 import logging
 import numpy as np
+import time
 
 from tornado import gen
 
@@ -9,6 +10,7 @@ from gateway import net, face
 from gateway.app import gateway
 from gateway.camera.recognizor import recognize_face
 from gateway.camera.tracker import track_object
+from gateway.firebase import fcm
 
 
 class CameraDevice(object):
@@ -120,6 +122,16 @@ class CameraDevice(object):
 
                 if len(faces) > 0:
                     logging.debug('Face recognition result: %s', faces)
+
+                    now = time.time()
+                    if self.__last_notify_time is None or \
+                            (now - self.__last_notify_time) > 60:
+                        notify_result = fcm.notify_all(message_title='Face Recognization Message',
+                                                       message_body='Faces %s are recognized' % names)
+                        if notify_result:
+                            logging.debug('Notify result: %s', notify_result)
+
+                        self.__last_notify_time = now
 
                 self.__face_recognition_future = None
 
