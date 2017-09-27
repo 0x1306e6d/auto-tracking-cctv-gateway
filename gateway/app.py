@@ -38,13 +38,15 @@ class Gateway(object):
 
             face_encodings = []
             for face_image_path in paths.children('faces', face_name):
-                logging.debug("Loading %s's face from %s", face_name, face_image_path)
-                face_image = face.load_face_image(face_image_path)
-                face_encoding = face.encode_face(face_image)
-                face_encodings.append(face_encoding)
+                if face_image_path.suffix in ['.jpg', '.png']:
+                    logging.debug("Loading %s's face from %s", face_name, face_image_path)
+                    face_image = face.load_face_image(face_image_path)
+                    face_encoding = face.encode_face(face_image)
+                    face_encodings.append(face_encoding)
 
-            logging.info("%s's %d faces are loaded.", face_name, len(face_encodings))
-            self.faces.append(face.Face(face_name, face_encodings))
+            if len(face_encodings) > 0:
+                logging.info("%s's %d faces are loaded.", face_name, len(face_encodings))
+                self.faces.append(face.Face(face_name, face_encodings))
 
         logging.info('All faces are loaded.')
 
