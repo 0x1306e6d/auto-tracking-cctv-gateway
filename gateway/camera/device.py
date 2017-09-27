@@ -6,12 +6,11 @@ import time
 
 from tornado import gen
 
-from gateway import net
+from gateway import net, face
+from gateway.app import gateway
 from gateway.camera.recognizor import recognize_face
 from gateway.camera.tracker import track_object
 from gateway.firebase import fcm
-
-logger = logging.getLogger(__name__)
 
 
 class CameraDevice(object):
@@ -32,11 +31,6 @@ class CameraDevice(object):
         self.__last_target_count = None
         self.__last_target_change_time = None
         self.__last_frame_entity_list = None
-
-        # For face recognization
-        self.__faces_to_recognize = fr.face_encodings(
-            fr.load_image_file("./images/So-eun/01.jpg"))[0]
-        self.__last_notify_time = None
 
     def to_dict(self):
         return {
@@ -107,7 +101,7 @@ class CameraDevice(object):
                 self.__last_frame_entity_list = last_frame_entity_list
 
                 if point is not None:
-                    logger.debug('Object tracking result: {}'.format(point))
+                    logging.debug('Object tracking result: {}'.format(point))
 
                 self.__object_tracking_future = None
 
@@ -124,10 +118,10 @@ class CameraDevice(object):
     def __fetch_face_recognization_result(self):
         if self.__face_recognition_future:
             if self.__face_recognition_future.done():
-                names = self.__face_recognition_future.result()
+                faces = self.__face_recognition_future.result()
 
-                if names and len(names) > 0:
-                    logger.debug('Face recognization result: {}'.format(names))
+                if len(faces) > 0:
+                    logging.debug('Face recognition result: %s', faces)
 
                     now = time.time()
                     if self.__last_notify_time is None or \
@@ -142,6 +136,5 @@ class CameraDevice(object):
                 self.__face_recognition_future = None
 
     def __execute_face_recognization(self, frame):
-        self.__face_recognition_future = self.__executor.submit(recognize_face,
-                                                                frame,
-                                                                [self.__faces_to_recognize])
+        self.__face_recognition_future = self.__executor.submit(
+            face.recognize_face, frame, gateway.faces)
