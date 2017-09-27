@@ -17,8 +17,8 @@ from gateway.conf import (
     MOBILE_NETWORK_HTTP_PORT,
     MOBILE_NETWORK_TCP_PORT,
 )
+from gateway.firebase import fcm
 
-logger = logging.getLogger(__name__)
 flask = Flask(__name__)
 
 
@@ -67,6 +67,22 @@ def handle_camera_move_request(camera_id):
         })
 
 
+@flask.route('/token', methods=['POST'])
+def handle_update_token():
+    body = request.data.decode('utf-8')
+    body = json.loads(body)
+
+    if 'token' in body:
+        token = body['token']
+        logging.debug('Received firebase token: %s', token)
+
+        fcm.insert_token(token)
+
+        return json.dumps({
+            'success': True
+        })
+
+
 class MobileTCPServer(TCPServer):
     def __init__(self, parent):
         super(MobileTCPServer, self).__init__()
@@ -74,19 +90,19 @@ class MobileTCPServer(TCPServer):
 
     @gen.coroutine
     def handle_stream(self, stream, address):
-        logger.info('New mobile stream {} from {}'.format(stream, address))
+        logging.info('New mobile stream {} from {}'.format(stream, address))
 
         camera_id = None
 
         def on_close(data):
-            logger.info('Close mobile stream {}'.format(stream))
+            logging.info('Close mobile stream {}'.format(stream))
 
             camera = gateway.camera_server.camera(camera_id)
             if camera is not None:
                 camera.unsubscribe(stream)
 
         def on_data(data):
-            logger.info('Read camera id from mobile stream {}'.format(stream))
+            logging.info('Read camera id from mobile stream {}'.format(stream))
 
             camera_id = int(struct.unpack('!Q', data)[0])
             camera = gateway.camera_server.camera(camera_id)
@@ -107,9 +123,9 @@ class MobileServer(object):
                tcp_port=MOBILE_NETWORK_TCP_PORT,
                address=MOBILE_NETWORK_IP):
         self.__http_server.listen(http_port, address=address)
-        logger.info('Listening mobile http server on {}:{}'.
-                    format(address, http_port))
+        logging.info('Listening mobile http server on {}:{}'.
+                     format(address, http_port))
 
         self.__tcp_server.listen(tcp_port, address=address)
-        logger.info('Listening mobile tcp server on {}:{}'.
-                    format(address, tcp_port))
+        logging.info('Listening mobile tcp server on {}:{}'.
+                     format(address, tcp_port))
