@@ -26,6 +26,7 @@ class CameraDevice(object):
         self.resolution = None
         self.framerate = None
         self.moving = False
+        self.auto_mode = True
         self.__watchers = {}
         self.__executor = executor
         self.__object_tracking_future = None
@@ -40,6 +41,7 @@ class CameraDevice(object):
         self.__last_frame_entity_list = None
 
         self._last_notified_faces = {}
+        self._last_notified_moving_objects = None
 
     def to_dict(self):
         return {
@@ -98,6 +100,36 @@ class CameraDevice(object):
             if is_face_recognizable:
                 self._execute_face_recognition(frame)
 
+    def _notify_moving_objects(self):
+        now = time.time()
+        if self._last_notified_moving_objects is None \
+                or (now - self._last_notified_moving_objects) > 60:
+            message_title = "Moving Object is detected"
+            message_body = "Camera {} detect moving objects".format(id(self))
+            result = fcm.notify_all(message_title, message_body)
+            if result:
+                logging.debug("Notify moving object result: {}".format(result))
+
+    def _handle_object_tracking_result(self, point):
+        width, height = self.resolution
+        x, y = point
+
+        if self.auto_mode:
+            self._notify_moving_objects()
+
+            if y <= height * 0.3:
+                logging.debug("[Camera {}] Move BOTTOM".format(id(self)))
+                self.move(MOVE_BOTTOM)
+            elif y >= height * 0.7:
+                logging.debug("[Camera {}] Move TOP".format(id(self)))
+                self.move(MOVE_TOP)
+            if x <= width * 0.3:
+                logging.debug("[Camera {}] Move RIGHT".format(id(self)))
+                self.move(MOVE_RIGHT)
+            elif x >= width * 0.7:
+                logging.debug("[Camera {}] Move LEFT".format(id(self)))
+                self.move(MOVE_LEFT)
+
     def __fetch_object_tracking_result(self):
         if self.__object_tracking_future:
             if self.__object_tracking_future.done():
@@ -117,7 +149,7 @@ class CameraDevice(object):
                 self.__last_frame_entity_list = last_frame_entity_list
 
                 if point is not None:
-                    logging.debug('Object tracking result: {}'.format(point))
+                    self._handle_object_tracking_result(point)
 
                 self.__object_tracking_future = None
 
@@ -143,7 +175,7 @@ class CameraDevice(object):
                 to_notify_names.append(name)
 
         if len(to_notify_names) > 0:
-            if 'Uhknown' in to_notify_names:
+            if 'Unknown' in to_notify_names:
                 message_title = "Warning"
                 message_body = "Unknown people are detected"
             else:

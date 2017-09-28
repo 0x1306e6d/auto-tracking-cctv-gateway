@@ -61,11 +61,32 @@ def handle_camera_move_request(camera_id):
             'reason': 'camera {} is not exist.'.format(camera_id)
         })
     else:
-        camera.move(direction)
+        if not camera.auto_mode:
+            camera.move(direction)
         return json.dumps({
             'success': True
         })
 
+@flask.route('/camera/<int:camera_id>/mode', methods=['POST'])
+def handle_camera_mode_request(camera_id):
+    body = request.data.decode('utf-8')
+    body = json.loads(body)
+    mode = body['mode']
+
+    camera = gateway.camera_server.camera(camera_id)
+    if not camera:
+        return json.dumps({
+            'success': False,
+            'reason': 'camera {} is not exist.'.format(camera_id)
+        })
+    else:
+        if mode == 'AUTO':
+            camera.auto_mode = True
+        else:
+            camera.auto_mode = False
+        return json.dumps({
+            'success': True
+        })
 
 @flask.route('/token', methods=['POST'])
 def handle_update_token():
