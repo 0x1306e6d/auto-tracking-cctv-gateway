@@ -29,12 +29,13 @@ def _display_recognized_faces(image, faces):
         cv2.rectangle(image, (left, top), (right, bottom), (0, 0, 255), 2)
 
         font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(image, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        cv2.putText(image, name, (left + 6, bottom - 6),
+                    font, 1.0, (255, 255, 255), 1)
     cv2.imshow('display', image)
     cv2.waitKey(1)
 
 
-def recognize_face(image, known_faces, tolerance=0.50):
+def recognize_face(image, known_faces, tolerance=0.45):
     face_locations = fr.face_locations(image)
     face_encodings = fr.face_encodings(image, face_locations)
 
