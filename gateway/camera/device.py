@@ -41,6 +41,7 @@ class CameraDevice(object):
         self.__last_frame_entity_list = None
 
         self._last_notified_faces = {}
+        self._last_notified_moving_objects = None
 
     def to_dict(self):
         return {
@@ -99,16 +100,34 @@ class CameraDevice(object):
             if is_face_recognizable:
                 self._execute_face_recognition(frame)
 
+    def _notify_moving_objects(self):
+        now = time.time()
+        if self._last_notified_moving_objects is None \
+                or (now - self._last_notified_moving_objects) > 60:
+            message_title = "Moving Object is detected"
+            message_body = "Camera {} detect moving objects".format(id(self))
+            result = fcm.notify_all(message_title, message_body)
+            if result:
+                logging.debug("Notify moving object result: {}".format(result))
+
     def _handle_object_tracking_result(self, point):
         width, height = self.resolution
         x, y = point
 
         if self.auto_mode:
+            self._notify_moving_objects()
+
+            if y <= height * 0.3:
+                logging.debug("[Camera {}] Move BOTTOM".format(id(self)))
+                self.move(MOVE_BOTTOM)
+            elif y >= height * 0.7:
+                logging.debug("[Camera {}] Move TOP".format(id(self)))
+                self.move(MOVE_TOP)
             if x <= width * 0.3:
-                logging.debug("Request move to right.")
+                logging.debug("[Camera {}] Move RIGHT".format(id(self)))
                 self.move(MOVE_RIGHT)
             elif x >= width * 0.7:
-                logging.debug("Request move to left.")
+                logging.debug("[Camera {}] Move LEFT".format(id(self)))
                 self.move(MOVE_LEFT)
 
     def __fetch_object_tracking_result(self):
